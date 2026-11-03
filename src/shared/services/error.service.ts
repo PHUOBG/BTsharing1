@@ -42,25 +42,33 @@ export class ErrorService {
   private transform(errors: ValidationError[], i18n: I18nContext) {
     const transformedError = errors.map((err: ValidationError) => {
       return Object.values(err.constraints).map((value: string) => {
-        return Object.assign(
-          i18n.t(`errors.${value}`, {
-            args: { property: err.property },
-          }),
-          { field: err.property },
-        );
+        const translated: unknown = i18n?.t(`errors.${value}`, {
+          args: { property: err.property },
+        });
+        const payload = _.isPlainObject(translated)
+          ? (translated as Record<string, unknown>)
+          : { message: translated || value };
+        return Object.assign(payload, { field: err.property });
       });
     });
 
     return transformedError;
   }
 
-  private combine(err_msg: string, i18n: I18nContext, errors: object[] = []) {
-    console.log(errors);
-    return Object.assign(i18n.t(`errors.${err_msg}`), {});
+  private combine(err_msg: string, i18n: I18nContext, _errors: object[] = []) {
+    const translated: unknown = i18n?.t(`errors.${err_msg}`);
+    if (_.isPlainObject(translated)) {
+      return Object.assign({}, translated);
+    }
+    return { message: err_msg };
   }
 
   private combineDev(err_msg: string, i18n: I18nContext, stackTrace: any) {
-    return Object.assign(i18n.t(`errors.${err_msg}`), {
+    const translated: unknown = i18n?.t(`errors.${err_msg}`);
+    const payload = _.isPlainObject(translated)
+      ? (translated as Record<string, unknown>)
+      : { message: err_msg };
+    return Object.assign({}, payload, {
       details: stackTrace,
     });
   }
